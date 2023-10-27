@@ -199,29 +199,50 @@ run:
       to: "host all all ::/0 md5"
 
   - exec:
+      tag: db
       background: true
       # use fast shutdown for pg
       stop_signal: INT
       cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/13/bin/postmaster -D /etc/postgresql/13/main
 
   # give db a few secs to start up
-  - exec: "sleep 5"
-
-  - exec: su postgres -c 'createdb $db_name' || true
-  - exec: su postgres -c 'psql $db_name -c "create user $db_user;"' || true
-  - exec: su postgres -c 'psql $db_name -c "grant all privileges on database $db_name to $db_user;"' || true
-  - exec: su postgres -c 'psql $db_name -c "alter schema public owner to $db_user;"'
-  - exec: su postgres -c 'psql template1 -c "create extension if not exists hstore;"'
-  - exec: su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
-  - exec: su postgres -c 'psql template1 -c "create extension if not exists vector;"'
-  - exec: su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
-  - exec: su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
-  - exec: su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
   - exec:
+      tag: db
+      cmd:
+        - "sleep 5"
+        - su postgres -c 'createdb $db_name' || true
+        - su postgres -c 'psql $db_name -c "create user $db_user;"' || true
+        - su postgres -c 'psql $db_name -c "grant all privileges on database $db_name to $db_user;"' || true
+        - su postgres -c 'psql $db_name -c "alter schema public owner to $db_user;"'
+        - su postgres -c 'psql template1 -c "create extension if not exists hstore;"'
+        - su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
+        - su postgres -c 'psql template1 -c "create extension if not exists vector;"'
+        - su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
+        - su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
+        - su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
+  - exec:
+      tag: db
       stdin: |
         update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');
       cmd: sudo -u postgres psql $db_name
       raise_on_fail: false
+
+  - file:
+      path: /usr/local/bin/create_db
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        su postgres -c 'createdb $db_name' || true
+        su postgres -c 'psql $db_name -c "create user $db_user;"' || true
+        su postgres -c 'psql $db_name -c "grant all privileges on database $db_name to $db_user;"' || true
+        su postgres -c 'psql $db_name -c "alter schema public owner to $db_user;"'
+        su postgres -c 'psql template1 -c "create extension if not exists hstore;"'
+        su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
+        su postgres -c 'psql template1 -c "create extension if not exists vector;"'
+        su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
+        su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
+        su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
+        sudo -u postgres psql $db_name <<< "update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');" || true
 
   - file:
      path: /var/lib/postgresql/take-database-backup
@@ -242,5 +263,6 @@ run:
         #0 */4 * * * /var/lib/postgresql/take-database-backup
 
   - exec:
+      tag: db
       hook: postgres
       cmd: "echo postgres installed!"
