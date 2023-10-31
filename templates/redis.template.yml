@@ -69,9 +69,10 @@ run:
   - exec:
       background: true
       tag: db
-      cmd:
-        - exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
-        - sleep 10
+      cmd: exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
+  - exec:
+      tag: db
+      cmd: sleep 10
 
 # we can not migrate without redis, launch it if needed
 hooks:
@@ -79,6 +80,7 @@ hooks:
     - exec:
         background: true
         cmd: exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
+    - exec: sleep 10
   after_code:
     - replace:
        filename: /etc/service/unicorn/run
