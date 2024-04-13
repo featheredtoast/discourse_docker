@@ -1,4 +1,4 @@
-name: CI
+name: launcher2
 
 on:
   release:
