@@ -78,6 +78,8 @@ func main() {
 		// Magic exit code that indicates a retry
 		if exiterr.ExitCode() == 77 {
 			os.Exit(77)
+		} else if runCtx.Err() != nil {
+			fmt.Fprintln(utils.Out, "Aborted with exit code", exiterr.ExitCode())
 		} else {
 			ctx.Fatalf(
 				"run failed with exit code %v\n"+
