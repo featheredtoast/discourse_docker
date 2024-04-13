@@ -30,7 +30,7 @@ type StartCmd struct {
 	DryRun     bool   `name:"dry-run" short:"n" help:"Do not start, print docker start command and exit."`
 	DockerArgs string `name:"docker-args" help:"Extra arguments to pass when running docker."`
 	RunImage   string `name:"run-image" help:"Start with a custom image."`
-	Supervised bool   `name:"supervised" help:"Attach the running container on start."`
+	Supervised bool   `name:"supervised" env:"SUPERVISED" help:"Attach the running container on start."`
 
 	extraEnv []string
 }
