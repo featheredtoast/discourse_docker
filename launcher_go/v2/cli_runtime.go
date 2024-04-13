@@ -8,9 +8,13 @@ import (
 	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"github.com/discourse/discourse_docker/launcher_go/v2/docker"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
+	"golang.org/x/sys/unix"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
+	"syscall"
+	"time"
 )
 
 /*
@@ -46,6 +50,22 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	if exists && !r.DryRun {
 		fmt.Fprintln(utils.Out, "starting up existing container")
 		cmd := exec.CommandContext(*ctx, utils.DockerPath, "start", r.Config)
+		if r.Supervised {
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+			cmd.Cancel = func() error {
+				if runtime.GOOS == "darwin" {
+					runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					stopCmd := exec.CommandContext(runCtx, utils.DockerPath, "stop", r.Config)
+					utils.CmdRunner(stopCmd).Run()
+					cancel()
+				}
+				return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
+			}
+			cmd.Args = append(cmd.Args, "--attach")
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+		}
 		fmt.Fprintln(utils.Out, cmd)
 		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
