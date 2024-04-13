@@ -17,8 +17,14 @@ No debug. Under the hood, launcher2 uses docker build which does not allow image
 
 ## New features
 
-* Individual build, configure, and migrate commands. Adds the ability to partially build up an image "offline" without taking down an image until what is absolutely necessary, saving downtime.
-* Adds the ability to build and run an image that finishes a build on boot, allowing the server to display an offline page.
-* Multiline env support
-* Docker compose generation. Allows easier exporting of configuration from discourse's pups configuration to a docker compose configuration.
-* autocomplete. Run `source <(./launcher2 install-completions)` to activate completions for the current shell, or add the results to your dotfiles
+### Separates bootstrap process into distinct build, configure, and migrate steps.
+Adds the ability to partially build up an image "offline" without taking down an image until what is absolutely necessary, minimizing downtime.
+
+Migrate (and consequently bootstrap) commands expose `SKIP_POST_DEPLOYMENT_MIGRATIONS` env var to turn on separate post deploy migration steps.
+
+### Adds the ability to build and run an image that finishes a build on boot, allowing the server to display an offline page.
+### Multiline env support
+### Docker compose generation.
+Allows easier exporting of configuration from discourse's pups configuration to a docker compose configuration.
+### Autocomplete
+Run `source <(./launcher2 install-completions)` to activate completions for the current shell, or add the results to your dotfiles
