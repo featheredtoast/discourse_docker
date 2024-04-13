@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - launcher2
   pull_request: {}
 
 jobs:
@@ -26,7 +25,7 @@ jobs:
         working-directory: ./launcher_go/v2
 
   build_latest:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/launcher2'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
     runs-on: ubuntu-latest
