@@ -1,0 +1,47 @@
+#!/bin/bash
+
+download_binary() {
+  echo "downloading launcher2..."
+  target_dir="./"
+  package="${target_dir}/discourse-builder.tar.gz"
+  package_md5="${target_dir}/discourse-builder.tar.gz.md5"
+
+  arch=none
+  case $(uname -m) in
+    aarch64 | arm64)
+      arch=arm64
+      ;;
+    x86_64)
+      arch=amd64
+      ;;
+    *)
+      echo "ERROR: unsupported arch detected."
+      exit 1
+      ;;
+  esac
+
+  os=none
+  case $(uname -o) in
+    Darwin)
+      os=darwin
+      ;;
+    GNU/Linux)
+      os=linux
+      ;;
+    *)
+      echo "ERROR: unsupported os detected."
+      exit 1
+      ;;
+  esac
+
+  curl -s -o ${package} -L https://github.com/featheredtoast/discourse_docker/releases/download/latest/launcher2-latest-${os}-${arch}.tar.gz
+  curl -s -o ${package_md5} -L https://github.com/featheredtoast/discourse_docker/releases/download/latest/launcher2-latest-${os}-${arch}.tar.gz.md5
+
+  echo "$(cat ${package_md5}) ${package}" | md5sum --status -c || (echo 'checksum failed' && exit 1)
+
+  tar -zxf ${package} -C ${target_dir}
+  rm ${package} ${package_md5}
+  echo "Done downloading. Run ./launcher2 to get started."
+}
+
+download_binary
