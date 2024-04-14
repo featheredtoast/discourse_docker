@@ -95,6 +95,6 @@ Allows easier exporting of configuration from discourse's pups configuration to 
 
 ### Autocomplete support
 
-Run `source <(./launcher2 sh)` to activate completions for the current shell, or add the results to your dotfiles
+Run `source <(./launcher2 sh)` to activate completions for the current shell, or add the results of `./launcher2 sh` to your dotfiles
 
-Autocompletes commands, subcommands, and suggests `app.yml` config files from your containers directory. Having a long site name should not feel like a pain to type.
+Autocompletes commands, subcommands, and suggests `app` config files from your containers directory. Having a long site name should not feel like a pain to type.
