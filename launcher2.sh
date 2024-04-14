@@ -1,10 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+SAVED_ARGV=("$@")
+DIRNAME=$(dirname "$0")
+BINDIR="${DIRNAME}"
 download_binary() {
   echo "downloading launcher2..."
-  target_dir="./"
-  package="${target_dir}/discourse-builder.tar.gz"
-  package_md5="${target_dir}/discourse-builder.tar.gz.md5"
+  package="${BINDIR}/discourse-builder.tar.gz"
+  package_md5="${BINDIR}/discourse-builder.tar.gz.md5"
 
   arch=none
   case $(uname -m) in
@@ -39,9 +41,12 @@ download_binary() {
 
   echo "$(cat ${package_md5}) ${package}" | md5sum --status -c || (echo 'checksum failed' && exit 1)
 
-  tar -zxf ${package} -C ${target_dir}
+  tar -zxf ${package} -C ${BINDIR}
   rm ${package} ${package_md5}
-  echo "Done downloading. Run ./launcher2 to get started."
 }
 
-download_binary
+if [ ! -f "${BINDIR}/launcher2" ]; then
+  download_binary
+  echo "Launcher downloaded"
+fi
+exec "${BINDIR}/launcher2" "${SAVED_ARGV[@]}"
