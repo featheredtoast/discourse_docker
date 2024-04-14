@@ -4,47 +4,54 @@ Build and run discourse images. Drop in replacement for launcher the shell scrip
 
 ## Changes from launcher
 
-No prereqs are checked. It assumes you have docker set up and whatever minimum requirements setup for Discourse: namely a recent enough version of docker, git.
-
-## Migration from launcher
+No software prerequisites are checked here. It assumes you have docker set up and whatever minimum requirements setup for Discourse: namely a recent enough version of docker, git.
 
 Some things are not implemented from launcher1.
 
 * `DOCKER_HOST_IP` - container can use `host.docker.internal` in most cases. Supported on mac and windows... can also be [added on linux via docker args](https://stackoverflow.com/questions/72827527/what-is-running-on-host-docker-internal-host).
+* debug containers - not implemented. No debug containers saved on build. Under the hood, launcher2 uses docker build which does not allow images to be saved along the way.
 * stable `mac-address` - not implemented.
-
-No debug containers saved on build. Under the hood, launcher2 uses docker build which does not allow images to be saved along the way.
 
 ## New features
 
+In a nutshell: split bootstrap/rebuild process up into distinct parts to allow for greater flexibility in how we build and deploy Discourse containers.
+
 ### Separates bootstrap process into distinct build, configure, and migrate steps.
 
-Separating the larger bootstrap process into separate steps allows us to break up the work. There are multiple benefits to this.
+Separating the larger bootstrap process into separate steps allows us to break up the work.
 
-#### Easier creation for prebuilt docker images
+`bootstrap` becomes an alias for: `build`, `migrate`, `configure`. There are multiple benefits to this.
 
-Share built docker images by only running a build step - this build step does not need to connect to a database.
+#### Build: Easier creation for prebuilt docker images
+
+Share built docker images by only running a `build` step - this build step does not need to connect to a database.
 It does not need postgres or redis running. This makes for a simple way to install custom plugins to your Discourse image.
 
 The resulting image is able to be used in Kubernetes and other docker environments.
 
 This is done by deferring finishing the build step, to a later configure step -- which boostraps the db, and precompiles assets.
 
-The configure and migrate steps can now be done on boot through use of env vars set in the `app.yml` config: `CREATE_DB_ON_BOOT`, `MIGRATE_ON_BOOT`, and `PRECOMPILE_ON_BOOT`, which allows for more portable containers able to drop in and bootstrap themselves and the database as they come into service.
+The `configure` and `migrate` steps can now be done on boot through use of env vars set in the `app.yml` config: `CREATE_DB_ON_BOOT`, `MIGRATE_ON_BOOT`, and `PRECOMPILE_ON_BOOT`, which allows for more portable containers able to drop in and bootstrap themselves and the database as they come into service.
 
-#### Adds support to *when* migrations are run
+#### Build: Better environment management
 
-Build and Configure steps do not run migrations, allowing for external tooling to specify exactly when migrations are run.
+The resulting image from a build is a container with no environment (unless `--bake-env` is specified). Additionally, well-known secrets are excluded from the build environment, resulting in a clean history of the prebuilt image that may be more easily shared.
 
-Migrate, bootstrap, and rebuilt steps do run migrations.
+Environment is only bound to a container either with `--bake-env` on build, or on a subsequent `configure` step.
 
-#### Adds support for *how* migrations are run: `SKIP_POST_DEPLOYMENT_MIGRATIONS` support
+#### Migrate: Adds support to *when* migrations are run
 
-Migrate commands expose env var to turn on separate post deploy migration steps.
+`Build` and `Configure` steps do not run migrations, allowing for external tooling to specify exactly when migrations are run.
+
+`Migrate`, (and`bootstrap`, and `rebuild`) steps are the only ones that run migrations.
+
+#### Migrate: Adds support for *how* migrations are run: `SKIP_POST_DEPLOYMENT_MIGRATIONS` support
+
+the `migrate` step exposes env vars that turn on separate post deploy migration steps.
 
 Allows the ability to turn on and skip post migration steps from launcher when running a stand-alone migrate step.
 
-#### Minimize downtime on rebuilds
+#### Rebuild: Minimize downtime
 
 Both standalone and multi-container setups' downtime have been minimized for rebuilds
 
@@ -52,11 +59,15 @@ Both standalone and multi-container setups' downtime have been minimized for reb
 On standalone builds, only stop the running container after the base build is done.
 Standalone sites will only need to be offline during migration and configure steps.
 
+For standalone, `rebuild` runs `build`, `stop`, `migrate`, `configure`, `destroy`, `start`.
+
 ##### Multiple container, web only
 On multi-container setups or setups with a configured external database using web only containers, rebuilds attempt to run migrations without stopping the container.
 A multi-container stays up as migration (skipping post deployment migrations) and as any necessary configuration steps are run. After deploy, post deployment migrations are run to clean up any destructive migrations.
 
-#### Serve offline page during downtime on rebuilds
+For web-only, `rebuild` runs `build`, `migrate (skip post migrations)`, `configure`, `destroy`, `start`, `migrate`.
+
+#### Rebuild: Serve offline page during downtime
 
 Adds the ability to build and run an image that finishes a build on boot, allowing the server to display an offline page.
 For standalone builds above, this allows for the accrued downtime from migration and configure steps to happen more gracefully.
@@ -74,6 +85,8 @@ These variables may also be used for other applications where more flexible boot
 
 ##### Standalone
 On rebuild, a standalone site will skip migration if it detects the presence of `MIGRATE_ON_BOOT` in the app config, and will skip configure steps if it detects the presence of `PRECOMPILE_ON_BOOT` in the app config.
+
+For standalone, `rebuild` runs `build`, `destroy`, `start`, skipping `migrate` and `configure`. The started container then serves an offline page, and runs migrate and precompiles assets before fully entering service.
 
 ##### Multiple container, web only
 On rebuild, a web only container will act in the same way as a standalone container. This may result in the same downtime as standalone services, as the containers are swapped, and the new container is still responsible for migration and precompiling before serving traffic.
@@ -107,3 +120,15 @@ Allows easier exporting of configuration from discourse's pups configuration to 
 Run `source <(./launcher2 sh)` to activate completions for the current shell, or add the results of `./launcher2 sh` to your dotfiles
 
 Autocompletes commands, subcommands, and suggests `app` config files from your containers directory. Having a long site name should not feel like a pain to type.
+
+## Maintainability
+
+Golang is well suited as a drop in replacement as just like a shellscript, the deployed binary can still carry minimal assumptions about a particular platform to run. (IE, no dependency on ruby, python, etc)
+
+Golang allows us to use a fully fleshed out programming language to run native yaml parsing: Calling out to ruby through a docker container worked well enough, but got complicated shuffling results through stdout into shell variables.
+
+Launcher has outgrown being a simple wrapper script around Docker. Golang has good support for tests and breaking up code into separate modules to better support further growth around additional subcommands we may wish to add.
+
+## Roadmap
+
+Scaffolding out subcommands, possibly as a later rewrite for `discourse-setup` as having native YAML libraries should make config parsing and editing simpler to do.
