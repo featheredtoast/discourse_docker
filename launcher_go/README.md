@@ -70,7 +70,7 @@ These allow containers to boot cleanly from a cold state, and complete db creati
 
 During this time, nginx can be up which allows standalone builds to display an offline page.
 
-Use of these variables may also be used for other applications where more flexible bootstrapping is needed for alternative deployments such as in Kubernetes.
+These variables may also be used for other applications where more flexible bootstrapping is desired.
 
 ##### Standalone
 On rebuild, a standalone site will skip migration if it detects the presence of `MIGRATE_ON_BOOT` in the app config, and will skip configure steps if it detects the presence of `PRECOMPILE_ON_BOOT` in the app config.
