@@ -29,7 +29,8 @@ It does not need postgres or redis running. This makes for a simple way to insta
 The resulting image is able to be used in Kubernetes and other docker environments.
 
 This is done by deferring finishing the build step, to a later configure step -- which boostraps the db, and precompiles assets.
-The configure and migrate steps can now be done on boot through use of env vars set in the `app.yml` config: `CREATE_DB_ON_BOOT`, `MIGRATE_ON_BOOT`, and `PRECOMPILE_ON_BOOT`
+
+The configure and migrate steps can now be done on boot through use of env vars set in the `app.yml` config: `CREATE_DB_ON_BOOT`, `MIGRATE_ON_BOOT`, and `PRECOMPILE_ON_BOOT`, which allows for more portable containers able to drop in and bootstrap themselves and the database as they come into service.
 
 #### Adds support to *when* migrations are run
 
@@ -60,7 +61,7 @@ A multi-container stays up as migration (skipping post deployment migrations) an
 Adds the ability to build and run an image that finishes a build on boot, allowing the server to display an offline page.
 For standalone builds above, this allows for the accrued downtime from migration and configure steps to happen more gracefully.
 
-Additional env vars get turned on in `offline-page.template.yml`:
+Additional container env vars get turned on by adding the `offline-page.template.yml` template:
   * `CREATE_DB_ON_BOOT`
   * `MIGRATE_ON_BOOT`
   * `PRECOMPILE_ON_BOOT`
@@ -69,7 +70,15 @@ These allow containers to boot cleanly from a cold state, and complete db creati
 
 During this time, nginx can be up which allows standalone builds to display an offline page.
 
-Use of these variables may also be used for other applications where more bootstrapping is needed for alternative deployments such as in Kubernetes.
+Use of these variables may also be used for other applications where more flexible bootstrapping is needed for alternative deployments such as in Kubernetes.
+
+##### Standalone
+On rebuild, a standalone site will skip migration if it detects the presence of `MIGRATE_ON_BOOT` in the app config, and will skip configure steps if it detects the presence of `PRECOMPILE_ON_BOOT` in the app config.
+
+##### Multiple container, web only
+On rebuild, a web only container will act in the same way as a standalone container. This may result in additional downtime as the containers are swapped, and the new (now down) container is responsible for migration and precompiling.
+
+For web-only containers, it may be desired to either ensure that `MIGRATE_ON_BOOT` and `PRECOMPILE_ON_BOOT` are false. Alternatively, you may run with `--full-build` which will ensure that migration and precompile steps are not deferred for the 'live' deploy.
 
 ### Multiline env support
 
