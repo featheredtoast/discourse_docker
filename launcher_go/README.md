@@ -39,21 +39,23 @@ Migrate, bootstrap, and rebuilt steps do run migrations.
 
 #### Adds support for *how* migrations are run: `SKIP_POST_DEPLOYMENT_MIGRATIONS` support
 
-Migrate (and consequently bootstrap) commands expose env var to turn on separate post deploy migration steps.
+Migrate commands expose env var to turn on separate post deploy migration steps.
 
-Allows the ability to turn on and skip post migration steps from launcher when running a migrate step.
+Allows the ability to turn on and skip post migration steps from launcher when running a stand-alone migrate step.
 
 #### Minimize downtime on rebuilds
 
 Both standalone and multi-container setups' downtime have been minimized for rebuilds
 
+##### Standalone
 On standalone builds, only stop the running container after the base build is done.
 Standalone sites will only need to be offline during migration and configure steps.
 
-On multi-container setups or setups with a configured external database, attempt to run migrations without stopping the container.
-Multi-container app restarts trigger after migration and configuration steps are run.
+##### Multiple container, web only
+On multi-container setups or setups with a configured external database using web only containers, rebuilds attempt to run migrations without stopping the container.
+A multi-container stays up as migration (skipping post deployment migrations) and as any necessary configuration steps are run. After deploy, post deployment migrations are run to clean up any destructive migrations.
 
-#### Serve offline page during downtime
+#### Serve offline page during downtime on rebuilds
 
 Adds the ability to build and run an image that finishes a build on boot, allowing the server to display an offline page.
 For standalone builds above, this allows for the accrued downtime from migration and configure steps to happen more gracefully.
@@ -81,9 +83,11 @@ env:
     ---END OF SECRET KEY---
 ```
 
-### Killable
+### More dependable SIGINT/SIGTERM handling.
 
 Launcher wraps docker run commands, which run as children in process trees. Launcher2 does the same, but attempts to kill or stop the underlying docker processes from interrupt signals.
+
+Tools that extend or depend on launcher should be able to send SIGINT/SIGTERM signals to tell launcher to shut down, and launcher should clean up child processes appropriately.
 
 ### Docker compose generation.
 
