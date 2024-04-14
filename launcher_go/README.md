@@ -4,7 +4,7 @@ Build and run discourse images. Drop in replacement for launcher the shell scrip
 
 ## Changes from launcher
 
-No prereqs are check yet. It assumes you have docker set up and whatever minimum requirements setup for Discourse: namely a recent enough version of docker, git.
+No prereqs are checked. It assumes you have docker set up and whatever minimum requirements setup for Discourse: namely a recent enough version of docker, git.
 
 ## Migration from launcher
 
@@ -23,12 +23,13 @@ Separating the larger bootstrap process into separate steps allows us to break u
 
 #### Easier creation for prebuilt docker images
 
-Share prebuilt docker images by only running a build step - this build step does not need to connect to a database.
+Share built docker images by only running a build step - this build step does not need to connect to a database.
 It does not need postgres or redis running. This makes for a simple way to install custom plugins to your Discourse image.
 
 The resulting image is able to be used in Kubernetes and other docker environments.
 
-Adds the ability to partially build up an image "offline" without taking down an image until what is absolutely necessary, minimizing downtime.
+This is done by deferring finishing the build step, to a later configure step -- which boostraps the db, and precompiles assets.
+The configure and migrate steps can now be done on boot through use of env vars set in the `app.yml` config: `CREATE_DB_ON_BOOT`, `MIGRATE_ON_BOOT`, and `PRECOMPILE_ON_BOOT`
 
 #### Adds support to *when* migrations are run
 
@@ -85,7 +86,11 @@ env:
 Launcher wraps docker run commands, which run as children in process trees. Launcher2 does the same, but attempts to kill or stop the underlying docker processes from interrupt signals.
 
 ### Docker compose generation.
+
 Allows easier exporting of configuration from discourse's pups configuration to a docker compose configuration.
 
-### Autocomplete
+### Autocomplete support
+
 Run `source <(./launcher2 sh)` to activate completions for the current shell, or add the results to your dotfiles
+
+Autocompletes commands, subcommands, and suggests `app.yml` config files from your containers directory. Having a long site name should not feel like a pain to type.
