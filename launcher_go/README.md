@@ -76,7 +76,7 @@ Use of these variables may also be used for other applications where more flexib
 On rebuild, a standalone site will skip migration if it detects the presence of `MIGRATE_ON_BOOT` in the app config, and will skip configure steps if it detects the presence of `PRECOMPILE_ON_BOOT` in the app config.
 
 ##### Multiple container, web only
-On rebuild, a web only container will act in the same way as a standalone container. This may result in additional downtime as the containers are swapped, and the new (now down) container is responsible for migration and precompiling.
+On rebuild, a web only container will act in the same way as a standalone container. This may result in the same downtime as standalone services, as the containers are swapped, and the new (now down) container is responsible for migration and precompiling.
 
 For web-only containers, it may be desired to either ensure that `MIGRATE_ON_BOOT` and `PRECOMPILE_ON_BOOT` are false. Alternatively, you may run with `--full-build` which will ensure that migration and precompile steps are not deferred for the 'live' deploy.
 
