@@ -5,8 +5,8 @@ DIRNAME=$(dirname "$0")
 BINDIR="${DIRNAME}"
 download_binary() {
   echo "downloading launcher2..."
-  package="${BINDIR}/discourse-builder.tar.gz"
-  package_md5="${BINDIR}/discourse-builder.tar.gz.md5"
+  package="${BINDIR}/launcher2.tar.gz"
+  package_md5="${BINDIR}/launcher2.tar.gz.md5"
 
   arch=none
   case $(uname -m) in
