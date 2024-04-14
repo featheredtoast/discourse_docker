@@ -13,7 +13,7 @@ Some things are not implemented from launcher1.
 * `DOCKER_HOST_IP` - container can use `host.docker.internal` in most cases. Supported on mac and windows... can also be [added on linux via docker args](https://stackoverflow.com/questions/72827527/what-is-running-on-host-docker-internal-host).
 * stable `mac-address` - not implemented.
 
-No debug. Under the hood, launcher2 uses docker build which does not allow images to be saved along the way.
+No debug containers saved on build. Under the hood, launcher2 uses docker build which does not allow images to be saved along the way.
 
 ## New features
 
