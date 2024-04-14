@@ -19,7 +19,7 @@ No debug containers saved on build. Under the hood, launcher2 uses docker build 
 
 ### Separates bootstrap process into distinct build, configure, and migrate steps.
 
-Separating the larger bootstrap process into separate steps allows us to break up the work. This is multipronged.
+Separating the larger bootstrap process into separate steps allows us to break up the work. There are multiple benefits to this.
 
 #### Easier creation for prebuilt docker images
 
