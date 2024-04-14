@@ -39,7 +39,7 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 	downloadDir, _ := os.MkdirTemp("", "launcher2")
 	bundleFilename := downloadDir + "/" + bundle
 	bundleHashFilename := downloadDir + "/" + bundleHash
-	//defer os.RemoveAll(downloadDir)
+	defer os.RemoveAll(downloadDir)
 
 	downloadFile(baseUrl+bundle, bundleFilename)
 	downloadFile(baseUrl+bundleHash, bundleHashFilename)
@@ -58,6 +58,9 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 	if err != nil {
 		return err
 	}
+
+	os.Rename(downloadDir + "/launcher2", ex)
+	os.Chmod(ex, 0755)
 
 	fmt.Fprintln(utils.Out, "launcher2 updated")
 	return nil
