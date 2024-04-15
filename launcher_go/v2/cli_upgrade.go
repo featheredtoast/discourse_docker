@@ -44,23 +44,15 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 	downloadFile(baseUrl+bundle, bundleFilename)
 	downloadFile(baseUrl+bundleHash, bundleHashFilename)
 
-	fmt.Fprintln(utils.Out, "filename...", ex)
-	fmt.Fprintln(utils.Out, "dir...", exDir)
-	fmt.Fprintln(utils.Out, bundleFilename)
-	fmt.Fprintln(utils.Out, bundleHashFilename)
-
 	err = checksumFile(bundleFilename, bundleHashFilename)
 	if err != nil {
 		return err
 	}
 
-	err = ExtractTarGz(bundleFilename, downloadDir)
+	err = ExtractTarGz(bundleFilename, exDir)
 	if err != nil {
 		return err
 	}
-
-	os.Rename(downloadDir + "/launcher2", ex)
-	os.Chmod(ex, 0755)
 
 	fmt.Fprintln(utils.Out, "launcher2 updated")
 	return nil
