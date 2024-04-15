@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+const upstreamUrl = "https://github.com/featheredtoast/discourse_docker"
+
 type CliUpgrade struct {
 	Version string `default:"latest" name:"target-version" short:"v" help:"upgrade to a specific version of launcher"`
 }
@@ -33,7 +35,7 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 		return err
 	}
 
-	baseUrl := "https://github.com/featheredtoast/discourse_docker/releases/download/" + r.Version + "/"
+	baseUrl := upstreamUrl + "/releases/download/" + r.Version + "/"
 	bundle := "launcher2-" + r.Version + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".tar.gz"
 	bundleHash := bundle + ".md5"
 	downloadDir, _ := os.MkdirTemp("", "launcher2")
@@ -146,6 +148,30 @@ func ExtractTarGz(filename string, targetDirectory string) error {
 	}
 	if err != io.EOF {
 		return fmt.Errorf("ExtractTarGz: Next() failed: %w", err)
+	}
+	return nil
+}
+
+func CheckVersion() error {
+	client := http.Client{}
+	versionUrl := upstreamUrl + "/releases/download/latest/launcher_version.txt"
+	resp, err := client.Get(versionUrl)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if 400 <= resp.StatusCode && resp.StatusCode < 600 {
+		return errors.New(versionUrl + " responded with an error: " + resp.Status)
+	}
+	bodyRaw, err := io.ReadAll(resp.Body)
+	newVersion := strings.TrimSpace(string(bodyRaw[:]))
+	if err != nil {
+		return err
+	}
+	if strings.Compare(utils.Version, newVersion) != 0 {
+		fmt.Fprintln(utils.Out, "New launcher version available.\n",
+			"current version:", utils.Version, "\n",
+			"new version:", newVersion)
 	}
 	return nil
 }
