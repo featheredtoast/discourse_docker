@@ -60,7 +60,7 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 		return err
 	}
 
-	fmt.Fprintln(utils.Out, "launcher2 updated")
+	fmt.Fprintln(utils.Out, "launcher updated")
 	return nil
 }
 
