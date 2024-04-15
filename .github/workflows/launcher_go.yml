@@ -22,7 +22,7 @@ jobs:
         with:
           go-version: '>=1.21.0'
       - run: |
-          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
             exit 1
           fi
         working-directory: ./launcher_go/v2
