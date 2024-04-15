@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -229,6 +230,11 @@ type RebuildCmd struct {
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
+
+	if slices.Contains([]string{"", "0", "false"}, os.Getenv("SKIP_VERSION_CHECK")) {
+		CheckVersion()
+	}
+
 	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")

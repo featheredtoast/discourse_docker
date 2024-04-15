@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"slices"
 )
 
 type Cli struct {
@@ -55,10 +54,6 @@ func main() {
 		kongplete.WithPredictor("file", complete.PredictFiles("*")),
 		kongplete.WithPredictor("dir", complete.PredictDirs("*")),
 	)
-
-	if slices.Contains([]string{"", "0", "false"}, os.Getenv("SKIP_VERSION_CHECK")) {
-		CheckVersion()
-	}
 
 	ctx, err := parser.Parse(os.Args[1:])
 	parser.FatalIfErrorf(err)
