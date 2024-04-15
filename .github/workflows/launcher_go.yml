@@ -71,11 +71,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '>=1.21.0'
-      - run: go run ./... --version > launcher_version.txt
+      - run: go run ./... --version > ../../launcher_version.txt
         working-directory: ./launcher_go/v2
       - name: upload version
         uses: softprops/action-gh-release@v1
-        working-directory: ./launcher_go/v2
         with:
           tag_name: latest
           files: launcher_version.txt
