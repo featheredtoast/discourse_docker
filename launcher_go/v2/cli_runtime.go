@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -224,14 +223,15 @@ func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type RebuildCmd struct {
-	Config    string `arg:"" name:"config" help:"config" predictor:"config"`
-	FullBuild bool   `name:"full-build" help:"Run a full build image even when migrate on boot and precompile on boot are present in the config. Saves a fully built image with environment baked in. Without this flag, if MIGRATE_ON_BOOT is set in config it will defer migration until container start, and if PRECOMPILE_ON_BOOT is set in the config, it will defer configure step until container start."`
-	Clean     bool   `help:"also runs clean"`
+	Config           string `arg:"" name:"config" help:"config" predictor:"config"`
+	FullBuild        bool   `name:"full-build" help:"Run a full build image even when migrate on boot and precompile on boot are present in the config. Saves a fully built image with environment baked in. Without this flag, if MIGRATE_ON_BOOT is set in config it will defer migration until container start, and if PRECOMPILE_ON_BOOT is set in the config, it will defer configure step until container start."`
+	SkipVersionCheck bool   `env:"SKIP_VERSION_CHECK" help:"Skips launcher checking for a new version"`
+	Clean            bool   `help:"also runs clean"`
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
 
-	if slices.Contains([]string{"", "0", "false"}, os.Getenv("SKIP_VERSION_CHECK")) {
+	if !r.SkipVersionCheck {
 		CheckVersion()
 	}
 

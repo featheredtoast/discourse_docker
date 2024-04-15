@@ -26,9 +26,6 @@ var _ = Describe("Runtime", func() {
 
 		ctx = context.Background()
 
-		//Skip version checks for tests
-		os.Setenv("SKIP_VERSION_CHECK", "1")
-
 		cli = &ddocker.Cli{
 			ConfDir:      "./test/containers",
 			TemplatesDir: "./test",
@@ -102,7 +99,7 @@ var _ = Describe("Runtime", func() {
 			})
 
 			It("should keep running during commits, and be post-deploy migration aware when using a web only container", func() {
-				runner := ddocker.RebuildCmd{Config: "web_only"}
+				runner := ddocker.RebuildCmd{Config: "web_only", SkipVersionCheck: true}
 
 				runner.Run(cli, &ctx)
 
@@ -146,7 +143,7 @@ var _ = Describe("Runtime", func() {
 			})
 
 			It("should stop with standalone", func() {
-				runner := ddocker.RebuildCmd{Config: "standalone"}
+				runner := ddocker.RebuildCmd{Config: "standalone", SkipVersionCheck: true}
 
 				runner.Run(cli, &ctx)
 
