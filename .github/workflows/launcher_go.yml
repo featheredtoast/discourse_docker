@@ -1,4 +1,4 @@
-name: launcher2
+name: launcher_go
 
 on:
   release:
