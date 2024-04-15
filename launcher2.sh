@@ -36,8 +36,8 @@ download_binary() {
       ;;
   esac
 
-  curl -s -o ${package} -L https://github.com/featheredtoast/discourse_docker/releases/download/latest/launcher2-latest-${os}-${arch}.tar.gz
-  curl -s -o ${package_md5} -L https://github.com/featheredtoast/discourse_docker/releases/download/latest/launcher2-latest-${os}-${arch}.tar.gz.md5
+  curl -s -o ${package} -L https://github.com/discourse/discourse_docker/releases/download/latest/launcher2-latest-${os}-${arch}.tar.gz
+  curl -s -o ${package_md5} -L https://github.com/discourse/discourse_docker/releases/download/latest/launcher2-latest-${os}-${arch}.tar.gz.md5
 
   echo "$(cat ${package_md5}) ${package}" | md5sum --status -c || (echo 'checksum failed' && exit 1)
 

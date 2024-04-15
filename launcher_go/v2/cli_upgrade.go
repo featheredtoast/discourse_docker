@@ -33,7 +33,7 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 	}
 
 	version := "latest"
-	baseUrl := "https://github.com/featheredtoast/discourse_docker/releases/download/" + version + "/"
+	baseUrl := "https://github.com/discourse/discourse_docker/releases/download/" + version + "/"
 	bundle := "launcher2-" + version + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".tar.gz"
 	bundleHash := bundle + ".md5"
 	downloadDir, _ := os.MkdirTemp("", "launcher2")
