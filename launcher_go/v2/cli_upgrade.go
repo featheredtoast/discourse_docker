@@ -17,10 +17,11 @@ import (
 )
 
 type CliUpgrade struct {
+	Version string `default:"latest" name:"target-version" short:"v" help:"upgrade to a specific version of launcher"`
 }
 
 func (r *CliUpgrade) Run(cli *Cli) error {
-	fmt.Fprintln(utils.Out, "Upgrading...")
+	fmt.Fprintln(utils.Out, "Upgrading to " + r.Version + "...")
 	ex, err := os.Executable()
 	if err != nil {
 		return err
@@ -32,9 +33,8 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 		return err
 	}
 
-	version := "latest"
-	baseUrl := "https://github.com/discourse/discourse_docker/releases/download/" + version + "/"
-	bundle := "launcher2-" + version + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".tar.gz"
+	baseUrl := "https://github.com/discourse/discourse_docker/releases/download/" + r.Version + "/"
+	bundle := "launcher2-" + r.Version + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".tar.gz"
 	bundleHash := bundle + ".md5"
 	downloadDir, _ := os.MkdirTemp("", "launcher2")
 	bundleFilename := downloadDir + "/" + bundle
@@ -123,7 +123,7 @@ func ExtractTarGz(filename string, targetDirectory string) error {
 	for header, err = tarReader.Next(); err == nil; header, err = tarReader.Next() {
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(targetDirectory + "/" + header.Name, 0755); err != nil {
+			if err := os.Mkdir(targetDirectory+"/"+header.Name, 0755); err != nil {
 				return fmt.Errorf("ExtractTarGz: Mkdir() failed: %w", err)
 			}
 		case tar.TypeReg:
