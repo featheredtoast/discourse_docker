@@ -9,6 +9,23 @@ on:
   pull_request: {}
 
 jobs:
+  lint:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.21.0'
+      - run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            exit 1
+          fi
+        working-directory: ./launcher_go/v2
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
@@ -29,7 +46,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: test
+    needs: [lint, test]
     strategy:
       matrix:
         goos: [linux, darwin]
@@ -54,7 +71,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: test
+    needs: [lint, test]
     strategy:
       matrix:
         goos: [linux, darwin]
