@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-const upstreamUrl = "https://github.com/featheredtoast/discourse_docker"
+const upstreamUrl = "https://github.com/discourse/discourse_docker"
 
 type CliUpgrade struct {
 	Version string `default:"latest" name:"target-version" short:"v" help:"upgrade to a specific version of launcher"`
