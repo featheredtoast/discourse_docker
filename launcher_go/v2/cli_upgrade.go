@@ -41,8 +41,14 @@ func (r *CliUpgrade) Run(cli *Cli) error {
 	bundleHashFilename := downloadDir + "/" + bundleHash
 	defer os.RemoveAll(downloadDir)
 
-	downloadFile(baseUrl+bundle, bundleFilename)
-	downloadFile(baseUrl+bundleHash, bundleHashFilename)
+	err = downloadFile(baseUrl+bundle, bundleFilename)
+	if err != nil {
+		return err
+	}
+	err = downloadFile(baseUrl+bundleHash, bundleHashFilename)
+	if err != nil {
+		return err
+	}
 
 	err = checksumFile(bundleFilename, bundleHashFilename)
 	if err != nil {
@@ -65,6 +71,9 @@ func downloadFile(fileUrl string, filename string) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if 400 <= resp.StatusCode && resp.StatusCode < 600 {
+		return errors.New(fileUrl + " responded with an error: " + resp.Status)
+	}
 	file, err := os.Create(filename)
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
