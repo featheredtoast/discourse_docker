@@ -21,7 +21,7 @@ type CliUpgrade struct {
 }
 
 func (r *CliUpgrade) Run(cli *Cli) error {
-	fmt.Fprintln(utils.Out, "Upgrading to " + r.Version + "...")
+	fmt.Fprintln(utils.Out, "Upgrading to "+r.Version+"...")
 	ex, err := os.Executable()
 	if err != nil {
 		return err
