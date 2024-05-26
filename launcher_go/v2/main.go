@@ -19,6 +19,7 @@ type Cli struct {
 	TemplatesDir string             `default:"." hidden:"" help:"Home project directory containing a templates/ directory which in turn contains pups yaml templates." predictor:"dir"`
 	BuildDir     string             `default:"./tmp" hidden:"" help:"Temporary build folder for building images." predictor:"dir"`
 	CliGenerate  CliGenerate        `cmd:"" name:"generate" help:"Generate commands, used to generate Discourse pups, and other Discourse configuration for external tools."`
+	Upgrade      CliUpgrade         `cmd:"" help:"Upgrade launcher"`
 	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image. This command does not need a running database. Saves resulting container."`
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets. Saves resulting container."`
 	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks for a site. Running container is temporary and is not saved."`
