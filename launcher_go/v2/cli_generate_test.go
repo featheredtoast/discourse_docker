@@ -35,6 +35,14 @@ var _ = Describe("Generate", func() {
 		os.RemoveAll(testDir)
 	})
 
+	It("should allow concatenated templates", func() {
+		runner := ddocker.RawYamlCmd{Config: "test"}
+		runner.Run(cli)
+		Expect(out.String()).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
+		Expect(out.String()).To(ContainSubstring("_FILE_SEPERATOR_"))
+		Expect(out.String()).To(ContainSubstring("version: tests-passed"))
+	})
+
 	It("should output docker compose cmd to config name's subdir", func() {
 		runner := ddocker.DockerComposeCmd{Config: "test",
 			OutputDir: testDir}
