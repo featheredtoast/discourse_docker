@@ -12,3 +12,7 @@ func TestMain(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Main Suite")
 }
+
+var _ = BeforeSuite(func() {
+	utils.CommitWait = 0
+})

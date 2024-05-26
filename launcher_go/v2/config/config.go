@@ -177,6 +177,10 @@ func (config *Config) EnvArray(includeKnownSecrets bool) []string {
 	return envs
 }
 
+func (config *Config) DockerArgs() []string {
+	return strings.Fields(config.Docker_Args)
+}
+
 func (config *Config) DockerfileEnvs() string {
 	builder := []string{}
 	for k, _ := range config.Env {
@@ -206,4 +210,22 @@ func (config *Config) DockerfileExpose() string {
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
+}
+
+func (config *Config) RunImage() string {
+	if len(config.Run_Image) > 0 {
+		return config.Run_Image
+	}
+	return utils.BaseImageName + config.Name
+}
+
+func (config *Config) DockerHostname(defaultHostname string) string {
+	_, exists := config.Env["DOCKER_USE_HOSTNAME"]
+	re := regexp.MustCompile(`[^a-zA-Z-]`)
+	hostname := defaultHostname
+	if exists {
+		hostname = config.Env["DISCOURSE_HOSTNAME"]
+	}
+	hostname = string(re.ReplaceAll([]byte(hostname), []byte("-"))[:])
+	return hostname
 }
