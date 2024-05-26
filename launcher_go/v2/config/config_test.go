@@ -80,6 +80,16 @@ var _ = Describe("Config", func() {
 		Expect(string(out[:])).To(ContainSubstring("image: local_discourse/test"))
 	})
 
+	It("parses docker args", func() {
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--expose 90"))
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--env MULTI=test'\n'multiline\\ with\\ some\\ spaces'\n'var'\n'"))
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--env REPLACED=test/test/test"))
+		Expect(conf.DockerArgsCli(true)).To(ContainSubstring("--expose 100"))
+
+		// ports can be omitted
+		Expect(conf.DockerArgsCli(false)).ToNot(ContainSubstring("--expose 90"))
+	})
+
 	Context("hostname tests", func() {
 		It("replaces hostname", func() {
 			config := config.Config{Env: map[string]string{"DOCKER_USE_HOSTNAME": "true", "DISCOURSE_HOSTNAME": "asdfASDF"}}

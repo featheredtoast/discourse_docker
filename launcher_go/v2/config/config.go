@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"dario.cat/mergo"
+	"github.com/Wing924/shellwords"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 
 	"gopkg.in/yaml.v3"
@@ -346,6 +347,35 @@ func (config *Config) dockerfileExpose() string {
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
+}
+
+func (config *Config) DockerArgsCli(includePorts bool) string {
+	args := []string{}
+	for k, v := range config.Env {
+		value := shellwords.Escape(v)
+		args = append(args, "--env "+k+"="+value)
+	}
+	for _, l := range config.Links {
+		args = append(args, "--link "+l.Link.Name+":"+l.Link.Alias)
+	}
+	for _, v := range config.Volumes {
+		args = append(args, "-v "+v.Volume.Host+":"+v.Volume.Guest)
+	}
+	if includePorts {
+		for _, p := range config.Expose {
+			if strings.Contains(p, ":") {
+				args = append(args, "-p "+p)
+			} else {
+				args = append(args, "--expose "+p)
+			}
+		}
+	}
+	for k, v := range config.Labels {
+		value := shellwords.Escape(v)
+		args = append(args, "--label "+k+"="+value)
+	}
+	slices.Sort(args)
+	return strings.TrimSpace(strings.Join(args, " ") + " " + config.Docker_Args)
 }
 
 func (config *Config) RunImage() string {
