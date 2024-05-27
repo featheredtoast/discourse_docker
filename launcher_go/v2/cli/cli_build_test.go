@@ -1,4 +1,4 @@
-package main_test
+package cli_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -6,7 +6,7 @@ import (
 
 	"bytes"
 	"context"
-	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
+	ddocker "github.com/discourse/discourse_docker/launcher_go/v2/cli"
 	. "github.com/discourse/discourse_docker/launcher_go/v2/test_utils"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"io"
@@ -30,8 +30,8 @@ var _ = Describe("Build", func() {
 		ctx = context.Background()
 
 		cli = &ddocker.Cli{
-			ConfDir:      "./test/containers",
-			TemplatesDir: "./test",
+			ConfDir:      "../test/containers",
+			TemplatesDir: "../test",
 			BuildDir:     testDir,
 		}
 		utils.CmdRunner = CreateNewFakeCmdRunner()

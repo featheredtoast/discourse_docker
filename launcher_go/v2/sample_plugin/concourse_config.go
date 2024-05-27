@@ -1,10 +1,11 @@
-package config
+package main
 
 import (
 	"bytes"
 	"errors"
 	"os"
 
+	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -36,7 +37,7 @@ type ConcourseConfig struct {
 	Config        string
 }
 
-func getConcourseTask(config Config) string {
+func getConcourseTask(config config.Config) string {
 	content := []*yaml.Node{}
 	for k, v := range config.Env {
 		key := yaml.Node{
@@ -80,7 +81,7 @@ func getConcourseTask(config Config) string {
 // dockerfile, concoursetask, config
 // which may be used in a static concourse resource
 // to generate build jobs
-func GenConcourseConfig(config Config) string {
+func GenConcourseConfig(config config.Config) string {
 
 	concourseConfig := &ConcourseConfig{
 		Dockerfile:    config.Dockerfile("--skip-tags=precompile,migrate,db", false),
@@ -96,7 +97,7 @@ func GenConcourseConfig(config Config) string {
 	return string(yaml)
 }
 
-func WriteConcourseConfig(config Config, file string) error {
+func WriteConcourseConfig(config config.Config, file string) error {
 	if err := os.WriteFile(file, []byte(GenConcourseConfig(config)), 0660); err != nil {
 		return errors.New("error writing concourse job config " + file)
 	}

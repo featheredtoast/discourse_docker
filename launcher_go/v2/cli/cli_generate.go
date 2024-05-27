@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -19,7 +19,6 @@ type CliGenerate struct {
 	DockerCompose DockerComposeCmd `cmd:"" name:"compose" help:"Create docker compose setup in the output {output-directory}/{config}/. The builder generates a docker-compose.yaml, Dockerfile, config.yaml, and an env file for you to source .envrc. Run with 'source .envrc; docker compose up'."`
 	DockerArgs    DockerArgsCmd    `cmd:"" name:"docker-args" help:"Print docker run args."`
 	RawYaml       RawYamlCmd       `cmd:"" name:"raw-yaml" help:"Print raw config, concatenated in pups format."`
-	ConcourseJob  ConcourseJobCmd  `cmd:"" name:"concourse-job" help:"Print concourse job config"`
 }
 
 type RawYamlCmd struct {
@@ -85,25 +84,6 @@ func (r *DockerArgsCmd) Run(cli *Cli) error {
 		fmt.Fprint(utils.Out, config.DockerHostname(""))
 	default:
 		return errors.New("unknown docker args type")
-	}
-	return nil
-}
-
-type ConcourseJobCmd struct {
-	Output string `help:"write concourse job to output file"`
-	Config string `arg:"" name:"config" help:"config" predictor:"config"`
-}
-
-func (r *ConcourseJobCmd) Run(cli *Cli) error {
-	fmt.Fprintln(utils.Out, "## WARNING: concourse job generation is experimental, use at your own risk!")
-	loadedConfig, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
-	if err != nil {
-		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
-	}
-	if r.Output == "" {
-		fmt.Fprint(utils.Out, config.GenConcourseConfig(*loadedConfig))
-	} else {
-		config.WriteConcourseConfig(*loadedConfig, r.Output)
 	}
 	return nil
 }
