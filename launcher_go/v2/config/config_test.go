@@ -29,7 +29,7 @@ var _ = Describe("Config", func() {
 	})
 
 	It("can write raw yaml config", func() {
-		err := conf.WriteYamlConfig(testDir)
+		err := conf.WriteYamlConfig(testDir, "config.yaml")
 		Expect(err).To(BeNil())
 		out, err := os.ReadFile(testDir + "/config.yaml")
 		Expect(err).To(BeNil())
@@ -38,7 +38,7 @@ var _ = Describe("Config", func() {
 	})
 
 	It("can convert pups config to dockerfile format and bake in default env", func() {
-		dockerfile := conf.Dockerfile("", false)
+		dockerfile := conf.Dockerfile("", false, "config.yaml")
 		Expect(dockerfile).To(ContainSubstring(`FROM ${dockerfile_from_image}
 ARG DISCOURSE_DB_HOST
 ARG DISCOURSE_DB_PASSWORD
@@ -76,7 +76,7 @@ CMD ["/sbin/boot"]`))
 	})
 
 	It("can generate a dockerfile with all env baked into the image", func() {
-		dockerfile := conf.Dockerfile("", true)
+		dockerfile := conf.Dockerfile("", true, "config.yaml")
 		Expect(dockerfile).To(ContainSubstring(`FROM ${dockerfile_from_image}
 ARG DISCOURSE_DB_HOST
 ARG DISCOURSE_DB_PASSWORD
