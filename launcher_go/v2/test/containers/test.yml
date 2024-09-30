@@ -30,6 +30,7 @@ docker_args: "--expose 100"
 params:
   ## Which Git revision should this container use? (default: tests-passed)
   #version: tests-passed
+  test_param: test_param_value
 
 env:
   LC_ALL: en_US.UTF-8
@@ -41,6 +42,7 @@ env:
     test
     multiline with some spaces
     var
+  PARAM_REPLACED: $test_param
 
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
   ## will be set automatically by bootstrap based on detected CPUs, or you can override

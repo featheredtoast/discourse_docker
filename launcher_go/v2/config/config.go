@@ -127,11 +127,17 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 
 	for k, v := range config.Labels {
 		val := strings.ReplaceAll(v, "{{config}}", config.Name)
+		for param, paramVal := range config.Params {
+			val = strings.ReplaceAll(val, "$" + param, paramVal)
+		}
 		config.Labels[k] = val
 	}
 
 	for k, v := range config.Env {
 		val := strings.ReplaceAll(v, "{{config}}", config.Name)
+		for param, paramVal := range config.Params {
+			val = strings.ReplaceAll(val, "$" + param, paramVal)
+		}
 		config.Env[k] = val
 	}
 

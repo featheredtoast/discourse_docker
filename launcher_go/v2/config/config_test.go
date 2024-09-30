@@ -28,6 +28,13 @@ var _ = Describe("Config", func() {
 		Expect(result).To(ContainSubstring("version: tests-passed"))
 	})
 
+	It("replaces env with passed params", func() {
+		conf, _ := config.LoadConfig("../test/containers", "test", true, "../test")
+		result := conf.Yaml()
+		Expect(result).To(ContainSubstring("PARAM_REPLACED: $test_param"))
+		Expect(conf.Env["PARAM_REPLACED"]).To(Equal("test_param_value"))
+	})
+
 	It("can write raw yaml config", func() {
 		err := conf.WriteYamlConfig(testDir, "config.yaml")
 		Expect(err).To(BeNil())
@@ -54,6 +61,7 @@ ARG LANG
 ARG LANGUAGE
 ARG LC_ALL
 ARG MULTI
+ARG PARAM_REPLACED
 ARG RAILS_ENV
 ARG REPLACED
 ARG RUBY_GC_HEAP_GROWTH_MAX_SLOTS
@@ -92,6 +100,7 @@ ARG LANG
 ARG LANGUAGE
 ARG LC_ALL
 ARG MULTI
+ARG PARAM_REPLACED
 ARG RAILS_ENV
 ARG REPLACED
 ARG RUBY_GC_HEAP_GROWTH_MAX_SLOTS
@@ -113,6 +122,7 @@ ENV LANG=${LANG}
 ENV LANGUAGE=${LANGUAGE}
 ENV LC_ALL=${LC_ALL}
 ENV MULTI=${MULTI}
+ENV PARAM_REPLACED=${PARAM_REPLACED}
 ENV RAILS_ENV=${RAILS_ENV}
 ENV REPLACED=${REPLACED}
 ENV RUBY_GC_HEAP_GROWTH_MAX_SLOTS=${RUBY_GC_HEAP_GROWTH_MAX_SLOTS}
