@@ -90,6 +90,7 @@ var _ = Describe("Build", func() {
 					"--env LANGUAGE " +
 					"--env LC_ALL " +
 					"--env MULTI " +
+					"--env PARAM_REPLACED " +
 					"--env RAILS_ENV " +
 					"--env REPLACED " +
 					"--env RUBY_GC_HEAP_GROWTH_MAX_SLOTS " +
@@ -124,6 +125,7 @@ var _ = Describe("Build", func() {
 				"LANGUAGE=en_US.UTF-8",
 				"LC_ALL=en_US.UTF-8",
 				"MULTI=test\nmultiline with some spaces\nvar\n",
+				"PARAM_REPLACED=test_param_value",
 				"RAILS_ENV=production",
 				"REPLACED=test/test/test",
 				"RUBY_GC_HEAP_GROWTH_MAX_SLOTS=40000",
