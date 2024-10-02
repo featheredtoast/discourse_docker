@@ -17,6 +17,8 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
+  - exec: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-13 postgresql-contrib-13 postgresql-13-pgvector
+
   - file:
      path: /etc/service/config-postgres/run
      chmod: "+x"

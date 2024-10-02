@@ -2,6 +2,7 @@ params:
   redis_io_threads: "1"
 
 run:
+  - exec: /usr/local/bin/install-redis
   - file:
      path: /etc/service/redis/run
      chmod: "+x"

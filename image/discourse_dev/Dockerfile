@@ -24,6 +24,10 @@ RUN sudo -u discourse bundle config set --global path /home/discourse/.bundle/ge
 # Add user-install ruby gems to PATH
 RUN echo 'PATH="$(ruby -r rubygems -e "puts Gem.user_dir")/bin:$PATH"' >> /home/discourse/.profile
 
+RUN /usr/local/bin/install-redis
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
+
 # get redis going
 ADD redis.template.yml /pups/redis.yml
 RUN /pups/bin/pups /pups/redis.yml
