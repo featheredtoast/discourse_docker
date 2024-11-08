@@ -40,10 +40,13 @@ jobs:
     # `unbuntu-22.04-8core-arm` for arch arm64 non-scheduled builds
     # `unbuntu-22.04-2core-arm` for arch arm64 scheduled builds
     # `unbuntu-22.04` for forks
-    runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule' && github.event.repo.name == 'discourse/discourse_docker') && '-8core') || (( matrix.arch == 'arm64' && github.event.repo.name == 'discourse/discourse_docker' && '-2core' ) || '') }}${{ (matrix.arch == 'arm64' && github.event.repo.name == 'discourse/discourse_docker') && '-arm' || '' }}
+    runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule' && github.event.repo.name == 'discourse/discourse_docker') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ (matrix.arch == 'arm64') && '-arm' || '' }}
     strategy:
       matrix:
         arch: [amd64, arm64]
+        # Do not run arm64 on forks
+        exclude:
+          - arch: ${{ (github.event.repo.name != 'discourse/discourse_docker') && 'arm64' }}
     timeout-minutes: ${{ ((github.event.repo.name != 'discourse/discourse_docker' || github.event_name == 'schedule') && 90) || ((matrix.arch == 'arm64' && 45) || 30) }}
     needs: timestamp
     env:
