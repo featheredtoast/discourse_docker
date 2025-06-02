@@ -20,7 +20,9 @@ params:
   nginx_worker_connections: 4000
 
 run:
-  - exec: thpoff echo "thpoff is installed!"
+  - exec:
+      tag: prebuild
+      cmd: thpoff echo "thpoff is installed!"
   - exec:
       tag: precompile
       cmd:
@@ -28,8 +30,11 @@ run:
         - /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
         - /usr/local/bin/ruby -e 'if (ENV["DISCOURSE_CDN_URL"] || "")[0..1] == "//"; puts "Aborting! CDN must have a protocol specified. Once fixed you should rebake your posts now to correct all posts."; exit 1; end'
   # TODO: move to base image (anacron can not be fired up using rc.d)
-  - exec: rm -f /etc/cron.d/anacron
+  - exec:
+      tag: prebuild
+      cmd: rm -f /etc/cron.d/anacron
   - file:
+     tag: prebuild
      path: /etc/cron.d/anacron
      contents: |
         SHELL=/bin/sh
@@ -37,6 +42,7 @@ run:
 
         30 7    * * *   root	/usr/sbin/anacron -s >/dev/null
   - file:
+     tag: prebuild
      path: /etc/runit/1.d/copy-env
      chmod: "+x"
      contents: |
@@ -48,6 +54,7 @@ run:
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = '\''#{v}'\''" if k =~ /^DISCOURSE_(.*)/}' > $conf
 
   - file:
+     tag: prebuild
      path: /etc/service/unicorn/run
      chmod: "+x"
      contents: |
@@ -66,6 +73,7 @@ run:
         LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec thpoff chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
+     tag: prebuild
      path: /etc/service/nginx/run
      chmod: "+x"
      contents: |
@@ -74,6 +82,7 @@ run:
         exec /usr/sbin/nginx
 
   - file:
+     tag: prebuild
      path: /etc/runit/3.d/01-nginx
      chmod: "+x"
      contents: |
@@ -81,6 +90,7 @@ run:
        sv stop nginx
 
   - file:
+     tag: prebuild
      path: /etc/runit/3.d/02-unicorn
      chmod: "+x"
      contents: |
@@ -88,6 +98,7 @@ run:
        sv stop unicorn
 
   - exec:
+      tag: prebuild
       cd: $home
       hook: code
       cmd:
@@ -131,17 +142,20 @@ run:
         - "[ ! -d public/plugins ] || find public/plugins/ -maxdepth 1 -xtype l -delete"
 
   - exec:
+      tag: prebuild
       cmd:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
         - "rm /etc/nginx/sites-enabled/default"
         - "mkdir -p /var/nginx/cache"
 
   - replace:
+      tag: prebuild
       filename: /etc/nginx/nginx.conf
       from: pid /run/nginx.pid;
       to: daemon off;
 
   - replace:
+      tag: prebuild
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /upstream[^\}]+\}/m
       to: "upstream discourse {
@@ -149,25 +163,30 @@ run:
       }"
 
   - replace:
+      tag: prebuild
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /server_name.+$/
       to: server_name _ ;
 
   - replace:
+      tag: prebuild
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /client_max_body_size.+$/
       to: client_max_body_size $upload_size ;
 
   - replace:
+      tag: prebuild
       filename: "/etc/nginx/nginx.conf"
       from: /worker_connections.+$/
       to: worker_connections $nginx_worker_connections ;
 
   - exec:
+      tag: prebuild
       cmd: echo "done configuring web"
       hook: web_config
 
   - exec:
+      tag: prebuild
       cd: $home
       hook: web
       cmd:
@@ -176,6 +195,7 @@ run:
         - find $home ! -user discourse -exec chown discourse {} \+
 
   - exec:
+      tag: build
       cd: $home
       hook: yarn
       cmd:
@@ -191,13 +211,17 @@ run:
           fi
 
   - exec:
+      tag: prebuild
       cd: $home
       hook: bundle_exec
       cmd:
         - su discourse -c 'bundle install --jobs $(($(nproc) - 1)) --retry 3'
         - su discourse -c 'bundle clean'
+        - su discourse -c 'find /var/www/discourse/vendor/bundle -name cache -not -path "*/gems/*" -type d -exec rm -rf {} +'
+        - su discourse -c 'find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +'
 
   - exec:
+      tag: prebuild
       cd: $home
       cmd:
         - su discourse -c 'LOAD_PLUGINS=0 bundle exec rake plugin:pull_compatible_all'
@@ -218,6 +242,10 @@ run:
         - su discourse -c 'bundle exec rake assets:precompile:build'
   - exec:
       cd: $home
+      cmd:
+        - su discourse -c 'cp -r /discourse_dist /var/www/discourse/app/assets/javascripts/discourse/dist'
+  - exec:
+      cd: $home
       tag: precompile
       hook: assets_precompile
       cmd:
@@ -229,6 +257,7 @@ run:
       to: "PRECOMPILE_ON_BOOT=0"
 
   - file:
+     tag: prebuild
      path: /usr/local/bin/discourse
      chmod: +x
      contents: |
@@ -236,6 +265,7 @@ run:
        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/discourse "$@")
 
   - file:
+     tag: prebuild
      path: /usr/local/bin/rails
      chmod: +x
      contents: |
@@ -243,6 +273,7 @@ run:
        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/rails "$@")
 
   - file:
+     tag: prebuild
      path: /usr/local/bin/rake
      chmod: +x
      contents: |
@@ -250,6 +281,7 @@ run:
        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec bin/rake "$@")
 
   - file:
+     tag: prebuild
      path: /usr/local/bin/rbtrace
      chmod: +x
      contents: |
@@ -257,6 +289,7 @@ run:
        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec rbtrace "$@")
 
   - file:
+     tag: prebuild
      path: /usr/local/bin/stackprof
      chmod: +x
      contents: |
@@ -264,6 +297,7 @@ run:
        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec stackprof "$@")
 
   - file:
+     tag: prebuild
      path: /etc/update-motd.d/10-web
      chmod: +x
      contents: |
@@ -273,6 +307,7 @@ run:
        echo
 
   - file:
+     tag: prebuild
      path: /etc/logrotate.d/rails
      contents: |
         /shared/log/rails/*.log
@@ -290,6 +325,7 @@ run:
         }
 
   - file:
+     tag: prebuild
      path: /etc/logrotate.d/nginx
      contents: |
         /var/log/nginx/*.log {
@@ -311,6 +347,7 @@ run:
   # we also ensure all the symlinks we need to /shared are in place in the correct structure
   # this allows us to bootstrap on one machine and then run on another
   - file:
+      tag: prebuild
       path: /etc/runit/1.d/00-ensure-links
       chmod: +x
       contents: |
@@ -342,6 +379,7 @@ run:
         mkdir -p /shared/tmp/{backups,restores}
         chown -R discourse:www-data /shared/tmp/{backups,restores}
   - file:
+      tag: prebuild
       path: /etc/runit/1.d/01-cleanup-web-pids
       chmod: +x
       contents: |
@@ -349,12 +387,14 @@ run:
         /bin/rm -f /var/www/discourse/tmp/pids/*.pid
   # change login directory to Discourse home
   - file:
+     tag: prebuild
      path: /root/.bash_profile
      chmod: 644
      contents: |
         cd $home
 
   - file:
+     tag: prebuild
      path: /usr/local/etc/ImageMagick-7/policy.xml
      contents: |
         <?xml version="1.0" encoding="UTF-8"?>
