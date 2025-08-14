@@ -73,13 +73,12 @@ RUN --mount=type=tmpfs,target=/var/log \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
     ca-certificates rsync \
     pkg-config patch \
-    libtool \
-    libpcre3 zlib1g \
     gawk parallel \
     anacron wget \
     psmisc whois brotli \
-    libtcmalloc-minimal4 \
     pngcrush pngquant ripgrep poppler-utils \
+# nginx runtime dependencies
+    libpcre3 zlib1g \
 # imagemagick runtime dependencies
     ghostscript libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
@@ -171,9 +170,9 @@ FROM discourse_slim AS discourse_gem_builder
 RUN --mount=type=tmpfs,target=/var/log \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
     cmake g++ \
+    libtool \
     libxslt-dev libcurl4-openssl-dev \
     libssl-dev libyaml-dev \
-    libpcre3-dev zlib1g-dev \
     libxml2-dev \
     libreadline-dev \
     libunwind-dev \
@@ -205,9 +204,9 @@ FROM discourse_web_only AS discourse_release
 RUN --mount=type=tmpfs,target=/var/log \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
     cmake g++ \
+    libtool \
     libxslt-dev libcurl4-openssl-dev \
     libssl-dev libyaml-dev \
-    libpcre3-dev zlib1g-dev \
     libxml2-dev \
     libreadline-dev \
     libunwind-dev \
