@@ -73,7 +73,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
     ca-certificates rsync \
     pkg-config patch \
-    gawk parallel \
+    gawk \
     anacron wget \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
