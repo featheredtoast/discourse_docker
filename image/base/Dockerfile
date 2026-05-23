@@ -205,7 +205,11 @@ ARG DISCOURSE_BRANCH
 # Clone and remove .git directory for final build
 RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
   sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/featheredtoast/discourse.git /var/www/discourse &&\
-  sudo -u discourse git -C /var/www/discourse rev-parse HEAD > /var/www/discourse/GIT_HASH &&\
+#get hash and version for app
+  GIT_HASH=$(sudo -u discourse git -C /var/www/discourse rev-parse HEAD) &&\
+  FULL_VERSION=$(sudo -u discourse git -C /var/www/discourse describe --dirty --match "v[0-9]*" 2> /dev/null) &&\
+  GIT_BRANCH=$(sudo -u discourse git -C /var/www/discourse branch --show-current) &&\
+  printf '{"git_version":"%s", "full_version":"%s","git_branch":"%s"}' "${GIT_HASH}" "${FULL_VERSION}" "${GIT_BRANCH}" > /var/www/discourse/config/git-utils-overrides.json &&\
   rm -rf /var/www/discourse/.git
 
 ENV RAILS_ENV=production
