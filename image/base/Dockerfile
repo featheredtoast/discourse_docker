@@ -4,6 +4,7 @@
 ARG DEBIAN_RELEASE=bookworm
 ARG RUBY_VERSION=3.4.9
 ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
+ARG DISCOURSE_BRANCH=featheredtoast-dev
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
 ARG DEBIAN_RELEASE
@@ -80,16 +81,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
     catdoc antiword \
-# gem build dependencies
-    cmake g++ pkg-config patch \
-    libtool \
-    libxslt-dev \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libyaml-dev \
-    libxml2-dev \
-    libreadline-dev \
-    libunwind-dev \
 # nginx runtime dependencies
     libpcre3 zlib1g \
 # imagemagick runtime dependencies
@@ -107,9 +98,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
-# yarn packages
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
 # node packages
     curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash -; \
 # setup anacron, rsyslog, initctl
@@ -120,7 +108,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} \
-    nodejs yarn &&\
+    nodejs &&\
     mkdir -p /etc/runit/1.d
 
 ENV LC_ALL=en_US.UTF-8
@@ -171,27 +159,62 @@ RUN rm -f /etc/service
 COPY etc/  /etc
 COPY sbin/ /sbin
 
-FROM discourse_dependencies AS discourse_slim
-ARG DISCOURSE_BRANCH=main
-
-# Discourse specific bits
+FROM discourse_dependencies AS discourse_clone
+ARG DISCOURSE_BRANCH
+# Full discourse clone
 RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
-    sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse
+    sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/featheredtoast/discourse.git /var/www/discourse
 
-FROM discourse_slim AS discourse_web_only
+FROM discourse_clone AS discourse_bundler
+
+RUN --mount=type=tmpfs,target=/var/log \
+  --mount=type=tmpfs,target=/var/cache/apt \
+  --mount=type=tmpfs,target=/var/lib/apt \
+    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+# gem build dependencies
+    cmake g++ pkg-config patch \
+    libtool \
+    libxslt-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libyaml-dev \
+    libxml2-dev \
+    libreadline-dev \
+    libunwind-dev
+ENV RAILS_ENV=production
+RUN cd /var/www/discourse &&\
+  sudo -u discourse bundle config --local deployment true &&\
+  sudo -u discourse bundle config --local path ./vendor/bundle &&\
+  sudo -u discourse bundle config --local without test development &&\
+  sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
+  find /var/www/discourse/vendor/bundle -name cache -not -path '*/gems/*' -type d -exec rm -rf {} + &&\
+  find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
+
+FROM discourse_clone AS discourse_npm_builder
+ENV RAILS_ENV=production
+COPY --from=discourse_bundler /var/www/discourse/vendor/bundle /var/www/discourse/vendor/bundle
+COPY --from=discourse_bundler /var/www/discourse/.bundle /var/www/discourse/.bundle
+COPY --from=discourse_bundler /home/discourse/.bundle /home/discourse/.bundle
+RUN cd /var/www/discourse &&\
+    sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile'
+RUN cd /var/www/discourse &&\
+  sudo -u discourse /bin/bash -c 'RAILS_ENV=production SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile'
+
+FROM discourse_dependencies AS discourse_web_only
+ARG DISCOURSE_BRANCH
+# Clone and remove .git directory for final build
+RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
+  sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/featheredtoast/discourse.git /var/www/discourse &&\
+  sudo -u discourse git -C /var/www/discourse rev-parse HEAD > /var/www/discourse/GIT_HASH &&\
+  rm -rf /var/www/discourse/.git
+
 ENV RAILS_ENV=production
 
-RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle config --local deployment true &&\
-    sudo -u discourse bundle config --local path ./vendor/bundle &&\
-    sudo -u discourse bundle config --local without test development &&\
-    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
-    find /var/www/discourse/vendor/bundle -name cache -not -path '*/gems/*' -type d -exec rm -rf {} + &&\
-    find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
+# copy whatever we need from both npm builder and bundler...
+COPY --from=discourse_bundler /home/discourse/.bundle /home/discourse/.bundle
+COPY --from=discourse_npm_builder --exclude=.git --exclude=node_modules /var/www/discourse/ /var/www/discourse
 
-RUN cd /var/www/discourse &&\
-    sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'
-
+# TODO: still include full clone here?
 FROM discourse_web_only AS discourse_release
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
