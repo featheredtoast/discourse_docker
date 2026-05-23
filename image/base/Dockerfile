@@ -212,7 +212,7 @@ ENV RAILS_ENV=production
 
 # copy whatever we need from both npm builder and bundler...
 COPY --from=discourse_bundler /home/discourse/.bundle /home/discourse/.bundle
-COPY --from=discourse_npm_builder --exclude=.git --exclude=node_modules /var/www/discourse/ /var/www/discourse
+COPY --from=discourse_npm_builder --exclude=.git --exclude=tmp --exclude=**/node_modules /var/www/discourse/ /var/www/discourse
 
 # TODO: still include full clone here?
 FROM discourse_web_only AS discourse_release
