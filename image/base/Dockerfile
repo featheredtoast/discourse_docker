@@ -199,6 +199,9 @@ RUN cd /var/www/discourse &&\
     sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile'
 RUN cd /var/www/discourse &&\
   sudo -u discourse /bin/bash -c 'RAILS_ENV=production SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile'
+# cache asset processor
+RUN cd /var/www/discourse &&\
+  sudo -u discourse /bin/bash -c 'RAILS_ENV=production SKIP_DB_AND_REDIS=1 bundle exec rails r "AssetProcessor.ember_version"'
 
 FROM discourse_dependencies AS discourse_web_only
 ARG DISCOURSE_BRANCH
@@ -215,8 +218,24 @@ RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
 ENV RAILS_ENV=production
 
 # copy whatever we need from both npm builder and bundler...
+# All compiled gems from bundler
 COPY --from=discourse_bundler /home/discourse/.bundle /home/discourse/.bundle
-COPY --from=discourse_npm_builder --exclude=.git --exclude=tmp --exclude=**/node_modules /var/www/discourse/ /var/www/discourse
+# Copy all compiled js and gems
+COPY --from=discourse_npm_builder --exclude=.git --exclude=tmp --exclude=**/node_modules --exclude=log/production.log /var/www/discourse/ /var/www/discourse
+# pnpm lock file for asset processor hash
+COPY --from=discourse_npm_builder /var/www/discourse/node_modules/.pnpm/lock.yaml /var/www/discourse/node_modules/.pnpm/lock.yaml
+RUN chown -R discourse:discourse /var/www/discourse/node_modules
+# the compiled asset processor
+COPY --from=discourse_npm_builder /var/www/discourse/tmp/asset-processor /var/www/discourse/tmp/asset-processor
+RUN chown -R discourse:discourse /var/www/discourse/tmp
+# referenced node modules
+COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js
+COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js
+COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js
+COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment/moment.js /var/www/discourse/frontend/discourse/node_modules/moment/moment.js
+COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js
+COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/ /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/
+RUN chown -R discourse:discourse /var/www/discourse/frontend
 
 # TODO: still include full clone here?
 FROM discourse_web_only AS discourse_release
