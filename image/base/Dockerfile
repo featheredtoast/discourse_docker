@@ -202,40 +202,30 @@ RUN cd /var/www/discourse &&\
 # cache asset processor
 RUN cd /var/www/discourse &&\
   sudo -u discourse /bin/bash -c 'RAILS_ENV=production SKIP_DB_AND_REDIS=1 bundle exec rails r "AssetProcessor.ember_version"'
+# get hash and version for the app
+RUN GIT_HASH=$(sudo -u discourse git -C /var/www/discourse rev-parse HEAD) &&\
+  FULL_VERSION=$(sudo -u discourse git -C /var/www/discourse describe --dirty --match "v[0-9]*" 2> /dev/null) &&\
+  GIT_BRANCH=$(sudo -u discourse git -C /var/www/discourse branch --show-current) &&\
+  printf '{"git_version":"%s", "full_version":"%s","git_branch":"%s"}' "${GIT_HASH}" "${FULL_VERSION}" "${GIT_BRANCH}" > /var/www/discourse/config/git-utils-overrides.json
 
 FROM discourse_dependencies AS discourse_web_only
 ARG DISCOURSE_BRANCH
-# Clone and remove .git directory for final build
-RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
-  sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/featheredtoast/discourse.git /var/www/discourse &&\
-#get hash and version for app
-  GIT_HASH=$(sudo -u discourse git -C /var/www/discourse rev-parse HEAD) &&\
-  FULL_VERSION=$(sudo -u discourse git -C /var/www/discourse describe --dirty --match "v[0-9]*" 2> /dev/null) &&\
-  GIT_BRANCH=$(sudo -u discourse git -C /var/www/discourse branch --show-current) &&\
-  printf '{"git_version":"%s", "full_version":"%s","git_branch":"%s"}' "${GIT_HASH}" "${FULL_VERSION}" "${GIT_BRANCH}" > /var/www/discourse/config/git-utils-overrides.json &&\
-  rm -rf /var/www/discourse/.git
 
 ENV RAILS_ENV=production
 
-# copy whatever we need from both npm builder and bundler...
-# All compiled gems from bundler
-COPY --from=discourse_bundler /home/discourse/.bundle /home/discourse/.bundle
-# Copy all compiled js and gems
-COPY --from=discourse_npm_builder --exclude=.git --exclude=tmp --exclude=**/node_modules --exclude=log/production.log /var/www/discourse/ /var/www/discourse
+# Copy discourse with compiled js and gems
+COPY --chown=discourse:discourse --from=discourse_npm_builder --exclude=docs --exclude=.git --exclude=tmp --exclude=**/node_modules --exclude=log/production.log /var/www/discourse/ /var/www/discourse
 # pnpm lock file for asset processor hash
-COPY --from=discourse_npm_builder /var/www/discourse/node_modules/.pnpm/lock.yaml /var/www/discourse/node_modules/.pnpm/lock.yaml
-RUN chown -R discourse:discourse /var/www/discourse/node_modules
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/node_modules/.pnpm/lock.yaml /var/www/discourse/node_modules/.pnpm/lock.yaml
 # the compiled asset processor
-COPY --from=discourse_npm_builder /var/www/discourse/tmp/asset-processor /var/www/discourse/tmp/asset-processor
-RUN chown -R discourse:discourse /var/www/discourse/tmp
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/tmp/asset-processor /var/www/discourse/tmp/asset-processor
 # referenced node modules
-COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js
-COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js
-COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js
-COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment/moment.js /var/www/discourse/frontend/discourse/node_modules/moment/moment.js
-COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js
-COPY --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/ /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/
-RUN chown -R discourse:discourse /var/www/discourse/frontend
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment/moment.js /var/www/discourse/frontend/discourse/node_modules/moment/moment.js
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js
+COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/ /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/
 
 # TODO: still include full clone here?
 FROM discourse_web_only AS discourse_release
