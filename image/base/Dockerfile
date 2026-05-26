@@ -4,7 +4,6 @@
 ARG DEBIAN_RELEASE=bookworm
 ARG RUBY_VERSION=3.4.9
 ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
-ARG DISCOURSE_BRANCH=featheredtoast-dev
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
 ARG DEBIAN_RELEASE
@@ -159,13 +158,11 @@ RUN rm -f /etc/service
 COPY etc/  /etc
 COPY sbin/ /sbin
 
-FROM discourse_dependencies AS discourse_clone
-ARG DISCOURSE_BRANCH
+FROM discourse_dependencies AS discourse_builder
+ARG DISCOURSE_BRANCH=featheredtoast-dev
 # Full discourse clone
 RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
     sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/featheredtoast/discourse.git /var/www/discourse
-
-FROM discourse_clone AS discourse_bundler
 
 RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
@@ -190,11 +187,6 @@ RUN cd /var/www/discourse &&\
   find /var/www/discourse/vendor/bundle -name cache -not -path '*/gems/*' -type d -exec rm -rf {} + &&\
   find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
 
-FROM discourse_clone AS discourse_npm_builder
-ENV RAILS_ENV=production
-COPY --from=discourse_bundler /var/www/discourse/vendor/bundle /var/www/discourse/vendor/bundle
-COPY --from=discourse_bundler /var/www/discourse/.bundle /var/www/discourse/.bundle
-COPY --from=discourse_bundler /home/discourse/.bundle /home/discourse/.bundle
 RUN cd /var/www/discourse &&\
     sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile'
 RUN cd /var/www/discourse &&\
@@ -209,26 +201,25 @@ RUN GIT_HASH=$(sudo -u discourse git -C /var/www/discourse rev-parse HEAD) &&\
   printf '{"git_version":"%s", "full_version":"%s","git_branch":"%s"}' "${GIT_HASH}" "${FULL_VERSION}" "${GIT_BRANCH}" > /var/www/discourse/config/git-utils-overrides.json
 
 FROM discourse_dependencies AS discourse_web_only
-ARG DISCOURSE_BRANCH
 
 ENV RAILS_ENV=production
 
 # Copy discourse with compiled js and gems
-COPY --chown=discourse:discourse --from=discourse_npm_builder --exclude=docs --exclude=.git --exclude=tmp --exclude=**/node_modules --exclude=log/production.log /var/www/discourse/ /var/www/discourse
+COPY --chown=discourse:discourse --from=discourse_builder --exclude=docs --exclude=.git --exclude=tmp --exclude=**/node_modules --exclude=log/production.log /var/www/discourse/ /var/www/discourse
 # pnpm lock file for asset processor hash
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/node_modules/.pnpm/lock.yaml /var/www/discourse/node_modules/.pnpm/lock.yaml
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/node_modules/.pnpm/lock.yaml /var/www/discourse/node_modules/.pnpm/lock.yaml
 # the compiled asset processor
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/tmp/asset-processor /var/www/discourse/tmp/asset-processor
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/tmp/asset-processor /var/www/discourse/tmp/asset-processor
 # referenced node modules
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment/moment.js /var/www/discourse/frontend/discourse/node_modules/moment/moment.js
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js
-COPY --chown=discourse:discourse --from=discourse_npm_builder /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/ /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js /var/www/discourse/frontend/discourse/node_modules/loader.js/dist/loader/loader.js
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/markdown-it/dist/markdown-it.js
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js /var/www/discourse/frontend/discourse-markdown-it/node_modules/xss/dist/xss.js
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/moment/moment.js /var/www/discourse/frontend/discourse/node_modules/moment/moment.js
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/ /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/
 
-# TODO: still include full clone here?
-FROM discourse_web_only AS discourse_release
+FROM discourse_builder AS discourse_release
+RUN rm /var/www/discourse/config/git-utils-overrides.json
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
