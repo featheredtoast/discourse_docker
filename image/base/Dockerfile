@@ -219,6 +219,8 @@ COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/fro
 COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/moment/moment.js /var/www/discourse/frontend/discourse/node_modules/moment/moment.js
 COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js
 COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/ /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/node_modules/@discourse/moment-timezone-names-translations/locales /var/www/discourse/node_modules/@discourse/moment-timezone-names-translations/locales
+COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/moment/locale /var/www/discourse/frontend/discourse/node_modules/moment/locale
 
 FROM discourse_builder_base AS discourse_release
 RUN --mount=type=tmpfs,target=/var/log \
