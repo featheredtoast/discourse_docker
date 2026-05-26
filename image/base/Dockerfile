@@ -158,11 +158,11 @@ RUN rm -f /etc/service
 COPY etc/  /etc
 COPY sbin/ /sbin
 
-FROM discourse_dependencies AS discourse_builder
-ARG DISCOURSE_BRANCH=featheredtoast-dev
+FROM discourse_dependencies AS discourse_builder_base
+ARG DISCOURSE_BRANCH=main
 # Full discourse clone
 RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
-    sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/featheredtoast/discourse.git /var/www/discourse
+    sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse
 
 RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
@@ -189,6 +189,8 @@ RUN cd /var/www/discourse &&\
 
 RUN cd /var/www/discourse &&\
     sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile'
+
+FROM discourse_builder_base AS discourse_builder
 RUN cd /var/www/discourse &&\
   sudo -u discourse /bin/bash -c 'RAILS_ENV=production SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile'
 # cache asset processor
@@ -218,8 +220,7 @@ COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/fro
 COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js /var/www/discourse/frontend/discourse/node_modules/moment-timezone/builds/moment-timezone-with-data.js
 COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/ /var/www/discourse/frontend/discourse/node_modules/@highlightjs/cdn-assets/
 
-FROM discourse_builder AS discourse_release
-RUN rm /var/www/discourse/config/git-utils-overrides.json
+FROM discourse_builder_base AS discourse_release
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
