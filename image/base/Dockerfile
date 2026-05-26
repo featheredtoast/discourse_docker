@@ -207,7 +207,7 @@ FROM discourse_dependencies AS discourse_web_only
 ENV RAILS_ENV=production
 
 # Copy discourse with compiled js and gems
-COPY --chown=discourse:discourse --from=discourse_builder --exclude=docs --exclude=.git --exclude=tmp --exclude=**/node_modules --exclude=log/production.log /var/www/discourse/ /var/www/discourse
+COPY --chown=discourse:discourse --from=discourse_builder --exclude=.git --exclude=tmp --exclude=**/node_modules --exclude=log/production.log /var/www/discourse/ /var/www/discourse
 # pnpm lock file for asset processor hash
 COPY --chown=discourse:discourse --from=discourse_builder /var/www/discourse/node_modules/.pnpm/lock.yaml /var/www/discourse/node_modules/.pnpm/lock.yaml
 # the compiled asset processor
