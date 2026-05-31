@@ -147,6 +147,16 @@ jobs:
 
       - name: create and push multi-arch manifests
         run: |
+          # Runtime deps timestamped
+          docker buildx imagetools create -t ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-runtime-deps \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-runtime-deps-amd64 \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-runtime-deps-arm64
+
+          # Runtime deps release
+          docker buildx imagetools create -t ${BASE_REPO}:runtime-deps \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-runtime-deps-amd64 \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-runtime-deps-arm64
+
           # Slim timestamped
           docker buildx imagetools create -t ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-slim \
             ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-slim-main-amd64 \

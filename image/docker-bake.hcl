@@ -31,7 +31,7 @@ variable "VERSION" {
 }
 
 group "base" {
-  targets = ["base-slim", "base-web-only", "base-release"]
+  targets = ["base-runtime-deps", "base-slim", "base-web-only", "base-release"]
 }
 
 target "base-runtime-deps" {
