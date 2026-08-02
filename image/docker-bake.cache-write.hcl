@@ -3,6 +3,7 @@ target "base-runtime-deps" {
     type = "registry"
     ref = "${CACHE_IMAGE}:cache-runtime-deps-${ARCH}"
     mode = "max"
+    compression = "zstd"
   }]
 }
 target "base-build-deps" {
@@ -10,6 +11,7 @@ target "base-build-deps" {
     type = "registry"
     ref = "${CACHE_IMAGE}:cache-build-deps-${ARCH}"
     mode = "max"
+    compression = "zstd"
   }]
 }
 target "base-slim" {
@@ -21,6 +23,7 @@ target "base-slim" {
     type = "registry"
     ref = "${CACHE_IMAGE}:cache-slim-${branch}-${ARCH}"
     mode = "max"
+    compression = "zstd"
   }]
 }
 target "base-web-only" {
@@ -32,6 +35,7 @@ target "base-web-only" {
     type = "registry"
     ref = "${CACHE_IMAGE}:cache-web-only-${branch}-${ARCH}"
     mode = "max"
+    compression = "zstd"
   }]
 }
 target "base-release" {
@@ -43,6 +47,7 @@ target "base-release" {
     type = "registry"
     ref = "${CACHE_IMAGE}:cache-release-${branch}-${ARCH}"
     mode = "max"
+    compression = "zstd"
   }]
 }
 
@@ -55,6 +60,7 @@ target "test" {
     type = "registry"
     ref = "${CACHE_IMAGE}:cache-test-${tag}-${ARCH}"
     mode = "max"
+    compression = "zstd"
   }]
 }
 
@@ -63,5 +69,6 @@ target "dev" {
     type = "registry"
     ref = "${CACHE_IMAGE}:cache-dev-${ARCH}"
     mode = "max"
+    compression = "zstd"
   }]
 }

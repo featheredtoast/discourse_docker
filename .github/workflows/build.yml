@@ -72,7 +72,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Build deps
         run: |
-          docker buildx bake base-runtime-deps -f docker-bake.hcl -f docker-bake.cache.hcl --load
+          docker buildx bake base-runtime-deps -f docker-bake.hcl -f docker-bake.cache.hcl --set=*.output=type=docker,compression=zstd
 
       - name: Build slim image
         run: |
@@ -81,17 +81,17 @@ jobs:
 
       - name: Build web only image
         run: |
-          docker buildx bake base-web-only-main -f docker-bake.hcl -f docker-bake.cache.hcl --load
-          docker buildx bake base-web-only-stable -f docker-bake.hcl -f docker-bake.cache.hcl --load
+          docker buildx bake base-web-only-main -f docker-bake.hcl -f docker-bake.cache.hcl --set=*.output=type=docker,compression=zstd
+          docker buildx bake base-web-only-stable -f docker-bake.hcl -f docker-bake.cache.hcl --set=*.output=type=docker,compression=zstd
 
       - name: Build release image
         run: |
-          docker buildx bake base-release-main -f docker-bake.hcl -f docker-bake.cache.hcl --load
-          docker buildx bake base-release-stable -f docker-bake.hcl -f docker-bake.cache.hcl --load
+          docker buildx bake base-release-main -f docker-bake.hcl -f docker-bake.cache.hcl --set=*.output=type=docker,compression=zstd
+          docker buildx bake base-release-stable -f docker-bake.hcl -f docker-bake.cache.hcl --set=*.output=type=docker,compression=zstd
 
       - name: Build test images
         run: |
-          docker buildx bake test-release -f docker-bake.hcl -f docker-bake.cache.hcl --load
+          docker buildx bake test-release -f docker-bake.hcl -f docker-bake.cache.hcl --set=*.output=type=docker,compression=zstd
 
       - name: run specs for `main` branch
         if: vars.SKIP_TESTS != '1'

@@ -3,6 +3,7 @@ target "_common-push" {
   output = [{
     type = "registry",
     push-by-digest = true
+    compression = "zstd"
   }]
 }
 
